@@ -4,6 +4,7 @@ import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+from sklearn.preprocessing import StandardScaler
 
 st.set_page_config(page_title="Customer Segregation", page_icon=":beer:", layout="wide", initial_sidebar_state="auto")
 
@@ -278,7 +279,27 @@ def correlation_heatmap(df):
     # Clear the figure to prevent memory issues
     plt.clf()
 
+def standardize_variables(df):
+    col_names = ['Annual Income (k$)', 'Age', 'Spending Score (1-100)']
+    sd = StandardScaler()
+    features = df[col_names]
+    scaler = sd.fit(features.values)
+    features = scaler.transform(features.values)
+    scaled_features = pd.DataFrame(features, columns=col_names)
+    return scaled_features
+
+def one_hot_encoding(df):
+    # Standardize the variables first
+    scaled_features = standardize_variables(df)
     
+    # One-hot encoding for the 'Gender' column
+    gender = df['Gender']
+    newdf = scaled_features.join(gender)
+    newdf = pd.get_dummies(newdf, prefix=None, prefix_sep='_', dummy_na=False, columns=None, sparse=False, drop_first=False, dtype=None)
+    newdf = newdf.drop(['Gender_Male'], axis=1)
+    
+    # Return the one-hot encoded DataFrame
+    return newdf
     
 
 # Navigation bar in sidebar
@@ -361,7 +382,22 @@ elif page == "Analysis and Insights":
     tab1, tab2 = st.tabs(["Data Pre-processing", "K-Means Clustering"])
     with tab1:
             with tab1:
-                st.markdown("<p style='font-size: 20px;'>Since gender is a categorical variable, it needs to be encoded and converted into numeric. All other variables will be scaled to follow a normal distribution before being fed into the model. We will standardize these variables with a mean of 0 and a standard deviation of 1.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='font-size: 15px;'>Since gender is a categorical variable, it needs to be encoded and converted into numeric. All other variables will be scaled to follow a normal distribution before being fed into the model. We will standardize these variables with a mean of 0 and a standard deviation of 1.</p>", unsafe_allow_html=True)
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("### Standardizing variables")
+                    st.markdown("<p style='font-size: 15px;'>First, let's standardize all variables in the dataset to get them around the same scale.</p>", unsafe_allow_html=True)
+                    standardized_df = standardize_variables(df)  # Call the function
+                    # Apply styling when displaying
+                    st.dataframe(standardized_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))  # Display the styled DataFrame
+                with col2:
+                    st.write("### One-Hot Encoding")
+                    st.markdown("<p style='font-size: 15px;'>Second, (to be added)</p>", unsafe_allow_html=True)
+                    # Call the one_hot_encoding function and store the result
+                    one_hot_encoded_df = one_hot_encoding(df)
+                    
+                    # Display the one-hot encoded DataFrame without styling
+                    st.dataframe(one_hot_encoded_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))
 
 elif page == "Conclusion":
     st.subheader("Conclusion and Recommendations")
