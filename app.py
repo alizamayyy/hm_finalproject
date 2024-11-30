@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Customer Segregation", page_icon=":beer:", layout="wide", initial_sidebar_state="auto")
 
@@ -77,24 +80,31 @@ def show_cleaned_data(df):
 def plot_histograms(df):
     st.write("### Distribution of Continuous Variables")
     
+    # Create three columns
+    col1, col2, col3 = st.columns(3)
+    
     # Create histograms for Age, Annual Income, and Spending Score
     numeric_cols = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+    columns = [col1, col2, col3]  # Map columns to their respective plots
     
-    for col in numeric_cols:
-        fig = px.histogram(
-            df, 
-            x=col,
-            title=f'Distribution of {col}',
-            template='simple_white',
-            color_discrete_sequence=['#3498db']
-        )
-        fig.update_layout(
-            xaxis_title=col,
-            yaxis_title="Count",
-            showlegend=False,
-            title_x=0.5
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    # Create each histogram in its respective column
+    for col_name, column in zip(numeric_cols, columns):
+        with column:
+            fig = px.histogram(
+                df, 
+                x=col_name,
+                title=f'Distribution of {col_name}',
+                template='simple_white',
+                color_discrete_sequence=['#3498db']
+            )
+            fig.update_layout(
+                xaxis_title=col_name,
+                yaxis_title="Count",
+                showlegend=False,
+                title_x=0.5,
+                height=400  # Fixed height for better alignment
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
 def plot_boxplots(df):
     st.write("### Box Plots of Continuous Variables")
@@ -116,6 +126,161 @@ def plot_boxplots(df):
     )
     st.plotly_chart(fig, use_container_width=True)
 
+def plot_donut(df):
+    st.write("### Gender Distribution")
+    
+    # Calculate gender distribution
+    gender_counts = df['Gender'].value_counts()
+    
+    # Create donut chart
+    fig = px.pie(
+        values=gender_counts.values,
+        names=gender_counts.index,
+        title='Distribution of Customer Gender',
+        hole=0.6,  # This makes it a donut chart (0.6 = 60% hole)
+        template='simple_white',
+        color_discrete_sequence=['#FF69B4', '#4169E1']  # Pink and Blue colors
+    )
+    
+    # Update layout
+    fig.update_layout(
+        title_x=0.5,
+        annotations=[dict(text='Gender', x=0.5, y=0.5, font_size=20, showarrow=False)]
+    )
+    
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True)
+
+def age_vs_spending_score(df):
+    # Create the joint plot
+    g = sns.jointplot(x="Age", y="Spending Score (1-100)", data=df, kind='reg', height=8, color='#FF69B4', space=0)
+    
+    # Display the plot in Streamlit
+    st.pyplot(g.figure)
+    
+    # Clear the figure to prevent memory issues
+    plt.clf()
+
+def age_vs_annual_income(df):
+    # Create the joint plot
+    g = sns.jointplot(x=df["Age"], y=df["Annual Income (k$)"], kind='hex', color='#FF69B4', height=8, ratio=5, space=0)
+    
+    # Display the plot in Streamlit
+    st.pyplot(g.figure)
+    
+    # Clear the figure to prevent memory issues
+    plt.clf()
+
+def spending_score_vs_annual_income(df):
+    # Create the joint plot
+    g = sns.JointGrid(data=df, height=8, x="Annual Income (k$)", y="Spending Score (1-100)", space=0.1)
+    g.plot_joint(sns.kdeplot, fill=True, thresh=0, color='#FF69B4')
+    g.plot_marginals(sns.histplot, color='#FF69B4', alpha=1, bins=20)
+    
+    # Display the plot in Streamlit
+    st.pyplot(g.figure)
+    
+    # Clear the figure to prevent memory issues
+    plt.clf()
+
+def scatter_age_vs_annual_income(df):
+    # Create the scatter plot with regression line grouped by gender
+    fig = px.scatter(
+        df,
+        x="Age",
+        y="Annual Income (k$)",
+        color="Gender",
+        trendline="ols",  # Ordinary Least Squares regression
+        template="simple_white",
+        color_discrete_sequence=['#FF69B4', '#4169E1']  # Pink and Blue colors
+    )
+    
+    # Update layout
+    fig.update_layout(
+        title='',
+        title_x=0.5,
+        height=400,
+        xaxis_title="Age",
+        yaxis_title="Annual Income (k$)",
+        legend_title="Gender"
+    )
+    
+    # Display the plot
+    st.plotly_chart(fig, use_container_width=True)
+
+def scatter_age_vs_spending_score(df):
+    # Create the scatter plot with regression line grouped by gender
+    fig = px.scatter(
+        df,
+        x="Age",
+        y="Spending Score (1-100)",
+        color="Gender",
+        trendline="ols",  # Ordinary Least Squares regression
+        template="simple_white",
+        color_discrete_sequence=['#FF69B4', '#4169E1']  # Pink and Blue colors
+    )
+    
+    # Update layout
+    fig.update_layout(
+        title='',
+        title_x=0.5,
+        height=400,
+        xaxis_title="Age",
+        yaxis_title="Spending Score (1-100)",
+        legend_title="Gender"
+    )
+    
+    # Display the plot
+    st.plotly_chart(fig, use_container_width=True)
+
+def scatter_annual_income_vs_spending_score(df):
+    # Create the scatter plot with regression line grouped by gender
+    fig = px.scatter(
+        df,
+        x="Annual Income (k$)",
+        y="Spending Score (1-100)",
+        color="Gender",
+        trendline="ols",  # Ordinary Least Squares regression
+        template="simple_white",
+        color_discrete_sequence=['#FF69B4', '#4169E1']  # Pink and Blue colors
+    )
+    
+    # Update layout
+    fig.update_layout(
+        title='',
+        title_x=0.5,
+        height=400,
+        xaxis_title="Annual Income (k$)",
+        yaxis_title="Spending Score (1-100)",
+        legend_title="Gender"
+    )
+    
+    # Display the plot
+    st.plotly_chart(fig, use_container_width=True)
+
+def correlation_heatmap(df):
+    # Select only numeric columns for correlation
+    numeric_df = df.select_dtypes(include=['float64', 'int64'])
+    
+    # Create a figure with specified size
+    plt.figure(figsize=(10, 6))
+    
+    # Create the heatmap
+    heatmap = sns.heatmap(numeric_df.corr(), vmin=-1, vmax=1, annot=True, cmap='viridis')
+    heatmap.set_title('Correlation Heatmap', fontdict={'fontsize': 18}, pad=12)
+    
+    # Save heatmap as .png file
+    plt.savefig('heatmap.png', dpi=300, bbox_inches='tight')
+    
+    # Display the plot in Streamlit
+    st.pyplot(plt)
+    
+    # Clear the figure to prevent memory issues
+    plt.clf()
+
+    
+    
+
 # Navigation bar in sidebar
 page = st.sidebar.selectbox("Select a section:", ["Introduction", "Data Exploration and Preparation", "Analysis and Insights", "Conclusion"])
 
@@ -133,7 +298,7 @@ elif page == "Data Exploration and Preparation":
     st.subheader("Dataset Overview")
     
     # Create tabs
-    tab1, tab2 = st.tabs(["Data Exploration and Preparation", "Data Visualization"])
+    tab1, tab2, tab3 = st.tabs(["Data Exploration and Preparation", "Data Visualization", "Relationships and Patterns"])
     
     with tab1:
         # Create two columns
@@ -151,11 +316,52 @@ elif page == "Data Exploration and Preparation":
     
     with tab2:
         plot_histograms(df)
-        plot_boxplots(df)
+        col1, col2 = st.columns(2)
+        with col1:
+            plot_boxplots(df)
+        with col2:
+            plot_donut(df)
+
+    with tab3:
+        st.subheader("Relationship between Features")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.write("### Age vs. Spending Score")
+            age_vs_spending_score(df)
+        with col2:
+            st.write("### Age vs. Annual Income")
+            age_vs_annual_income(df)
+        with col3:
+            st.write("### Spending Score vs. Annual Income")
+            spending_score_vs_annual_income(df)
+        
+        st.subheader("Relationship with Linear Regression Line of Best Fit")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.write("### Age vs. Annual Income")
+            scatter_age_vs_annual_income(df)
+        with col2:
+            st.write("### Age vs. Spending Score")
+            scatter_age_vs_spending_score(df)
+        with col3:
+            st.write("### Annual Income vs. Annual Income")
+            scatter_annual_income_vs_spending_score(df)
+
+        st.subheader("Correlation between Features")
+        col1, col2, col3 = st.columns(3)
+        with col2:
+            st.write("### Correlation Heatmap")
+            correlation_heatmap(df)
+        
 
 elif page == "Analysis and Insights":
     st.subheader("Analysis and Insights")
-    # Add your analysis content here
+    
+    # Create tabs
+    tab1, tab2 = st.tabs(["Data Pre-processing", "K-Means Clustering"])
+    with tab1:
+            with tab1:
+                st.markdown("<p style='font-size: 20px;'>Since gender is a categorical variable, it needs to be encoded and converted into numeric. All other variables will be scaled to follow a normal distribution before being fed into the model. We will standardize these variables with a mean of 0 and a standard deviation of 1.</p>", unsafe_allow_html=True)
 
 elif page == "Conclusion":
     st.subheader("Conclusion and Recommendations")
