@@ -5,9 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
-from yellowbrick.cluster import KElbowVisualizer
 from sklearn.cluster import KMeans
-from yellowbrick.cluster import SilhouetteVisualizer
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
