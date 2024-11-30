@@ -5,6 +5,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
+from yellowbrick.cluster import KElbowVisualizer
+from sklearn.cluster import KMeans
+from yellowbrick.cluster import SilhouetteVisualizer
+from sklearn.metrics import silhouette_score
+from sklearn.decomposition import PCA
+from mpl_toolkits.mplot3d import Axes3D
 
 st.set_page_config(page_title="Customer Segregation", page_icon=":beer:", layout="wide", initial_sidebar_state="auto")
 
@@ -300,6 +306,83 @@ def one_hot_encoding(df):
     
     # Return the one-hot encoded DataFrame
     return newdf
+
+def pcacomponents(df):
+    newdf = one_hot_encoding(df)
+    pca = PCA(n_components=4)
+    principalComponents = pca.fit_transform(newdf)
+    features = range(pca.n_components_)
+    plt.figure(figsize=(16,8))
+    plt.bar(features, pca.explained_variance_ratio_, color='blue')  # Changed to solid blue
+    plt.xlabel('PCA features')
+    plt.ylabel('variance %')
+    plt.xticks(features)
+
+    # Create a DataFrame for PCA components
+    PCA_components = pd.DataFrame(principalComponents)
+
+    # Display the plot in Streamlit
+    st.pyplot(plt)  # Display the plot
+    
+    return PCA_components  # Return the PCA components
+
+def elbow_method(df):
+    # Call pcacomponents to get PCA_components
+    PCA_components = pcacomponents(df)  # Ensure PCA_components is defined here
+
+    # Check if PCA_components is None
+    if PCA_components is None:
+        st.error("PCA components could not be generated.")
+        return
+
+    # Instantiate the clustering model and visualizer
+    model = KMeans()
+    visualizer = KElbowVisualizer(model, k=(1,10), size=(1080, 500))
+
+    visualizer.fit(PCA_components.iloc[:, :2])  # Fit the data to the visualizer
+    visualizer.show()  # Finalize and render the figure
+
+    # Add this line to display the elbow plot in Streamlit
+    st.pyplot(visualizer.fig)  # Display the plot
+
+
+def silhouette_coefficient_metric(df):
+    PCA_components = pcacomponents(df)
+    
+    # Check if PCA_components is None
+    if PCA_components is None:
+        st.error("PCA components could not be generated.")
+        return
+
+    model = KMeans(n_clusters=4, init='k-means++', random_state=42)
+    model.fit(PCA_components.iloc[:, :2])
+
+    visualizer = SilhouetteVisualizer(model, size=(1080, 500))
+    visualizer.fit(PCA_components.iloc[:, :2])  # Fit the data to the visualizer
+    visualizer.show()  # Finalize and render the figure
+
+    # Add this line to display the silhouette plot in Streamlit
+    st.pyplot(visualizer.fig)  # Display the plot
+
+def cluster_visualization(df):
+    newdf = one_hot_encoding(df)
+    PCA_components = pcacomponents(df)
+    model = KMeans(n_clusters=4, init='k-means++', random_state=42)
+    clusters = model.fit_predict(PCA_components.iloc[:,:2])
+    newdf["label"] = clusters
+ 
+    fig = plt.figure(figsize=(12,12))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(newdf.Age[newdf["label"] == 0], newdf["Annual Income (k$)"][newdf["label"] == 0], newdf["Spending Score (1-100)"][newdf["label"] == 0], c='blue', s=80)
+    ax.scatter(newdf.Age[newdf["label"] == 1], newdf["Annual Income (k$)"][newdf["label"] == 1], newdf["Spending Score (1-100)"][newdf["label"] == 1], c='red', s=80)
+    ax.scatter(newdf.Age[newdf["label"] == 2], newdf["Annual Income (k$)"][newdf["label"] == 2], newdf["Spending Score (1-100)"][newdf["label"] == 2], c='green', s=80)
+    ax.scatter(newdf.Age[newdf["label"] == 3], newdf["Annual Income (k$)"][newdf["label"] == 3], newdf["Spending Score (1-100)"][newdf["label"] == 3], c='purple', s=80)  # Changed color for clarity
+    ax.set_xlabel("Age")
+    ax.set_ylabel("Annual Income (k$)")
+    ax.set_zlabel("Spending Score (1-100)")
+    
+    # Display the plot in Streamlit
+    st.pyplot(fig)  # Use st.pyplot instead of plt.show()
     
 
 # Navigation bar in sidebar
@@ -381,23 +464,39 @@ elif page == "Analysis and Insights":
     # Create tabs
     tab1, tab2 = st.tabs(["Data Pre-processing", "K-Means Clustering"])
     with tab1:
-            with tab1:
-                st.markdown("<p style='font-size: 15px;'>Since gender is a categorical variable, it needs to be encoded and converted into numeric. All other variables will be scaled to follow a normal distribution before being fed into the model. We will standardize these variables with a mean of 0 and a standard deviation of 1.</p>", unsafe_allow_html=True)
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write("### Standardizing variables")
-                    st.markdown("<p style='font-size: 15px;'>First, let's standardize all variables in the dataset to get them around the same scale.</p>", unsafe_allow_html=True)
-                    standardized_df = standardize_variables(df)  # Call the function
-                    # Apply styling when displaying
-                    st.dataframe(standardized_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))  # Display the styled DataFrame
-                with col2:
-                    st.write("### One-Hot Encoding")
-                    st.markdown("<p style='font-size: 15px;'>Second, (to be added)</p>", unsafe_allow_html=True)
-                    # Call the one_hot_encoding function and store the result
-                    one_hot_encoded_df = one_hot_encoding(df)
+        st.markdown("<p style='font-size: 15px;'>Since gender is a categorical variable, it needs to be encoded and converted into numeric. All other variables will be scaled to follow a normal distribution before being fed into the model. We will standardize these variables with a mean of 0 and a standard deviation of 1.</p>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("### Standardizing variables")
+            st.markdown("<p style='font-size: 15px;'>First, let's standardize all variables in the dataset to get them around the same scale.</p>", unsafe_allow_html=True)
+            standardized_df = standardize_variables(df)  # Call the function
+            # Apply styling when displaying
+            st.dataframe(standardized_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))  # Display the styled DataFrame
+        with col2:
+            st.write("### One-Hot Encoding")
+            st.markdown("<p style='font-size: 15px;'>Second, (to be added)</p>", unsafe_allow_html=True)
+            # Call the one_hot_encoding function and store the result
+            one_hot_encoded_df = one_hot_encoding(df)
                     
-                    # Display the one-hot encoded DataFrame without styling
-                    st.dataframe(one_hot_encoded_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))
+            # Display the one-hot encoded DataFrame without styling
+            st.dataframe(one_hot_encoded_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))
+    
+    with tab2:
+        st.markdown("<p style='font-size: 15px;'>(K-Means clustering intro)</p>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("### Implementation of PCA")
+            st.markdown("<p style='font-size: 15px;'>PCA is a technique that helps us reduce the dimension of a dataset. When we run PCA on a data frame, new components are created. These components explain the maximum variance in the model. We can select a subset of these variables and include them into the K-means model.</p>", unsafe_allow_html=True)
+            pcacomponents(df)
+            st.markdown("<p style='font-size: 15px;'>Using the elbow method We can observe that the optimal number of clusters is k=4. Now we can run a K-Means using as n_clusters the number 4.</p>", unsafe_allow_html=True)
+        with col2:
+            st.markdown("### Elbow Method for the Clustering Model")
+            elbow_method(df)
+            st.markdown("<p style='font-size: 15px;'> The silhouette score of this model is about 0.35. This isn't a bad model, but we can do better and try getting higher cluster separation.</p>", unsafe_allow_html=True)
+        st.markdown("### Silhouette Coefficient Metric")
+        silhouette_coefficient_metric(df)
+        st.markdown("### Visualization of clusters built by the model")
+        cluster_visualization(df)
 
 elif page == "Conclusion":
     st.subheader("Conclusion and Recommendations")
