@@ -328,41 +328,62 @@ def pcacomponents(df):
 
 def elbow_method(df):
     # Call pcacomponents to get PCA_components
-    PCA_components = pcacomponents(df)  # Ensure PCA_components is defined here
+    PCA_components = pcacomponents(df)
 
     # Check if PCA_components is None
     if PCA_components is None:
         st.error("PCA components could not be generated.")
         return
 
-    # Instantiate the clustering model and visualizer
-    model = KMeans()
-    visualizer = KElbowVisualizer(model, k=(1,10), size=(1080, 500))
+    # Calculate inertia for different values of k
+    inertia = []
+    k_values = range(1, 11)
+    for k in k_values:
+        model = KMeans(n_clusters=k, init='k-means++', random_state=42)
+        model.fit(PCA_components.iloc[:, :2])
+        inertia.append(model.inertia_)
 
-    visualizer.fit(PCA_components.iloc[:, :2])  # Fit the data to the visualizer
-    visualizer.show()  # Finalize and render the figure
-
-    # Add this line to display the elbow plot in Streamlit
-    st.pyplot(visualizer.fig)  # Display the plot
+    # Plot the elbow curve
+    plt.figure(figsize=(10, 6))
+    plt.plot(k_values, inertia, marker='o')
+    plt.title('Elbow Method for Optimal k')
+    plt.xlabel('Number of Clusters (k)')
+    plt.ylabel('Inertia')
+    plt.xticks(k_values)
+    plt.grid()
+    
+    # Display the plot in Streamlit
+    st.pyplot(plt)  # Display the plot
 
 
 def silhouette_coefficient_metric(df):
     PCA_components = pcacomponents(df)
-    
+
     # Check if PCA_components is None
     if PCA_components is None:
         st.error("PCA components could not be generated.")
         return
 
-    model = KMeans(n_clusters=4, init='k-means++', random_state=42)
-    model.fit(PCA_components.iloc[:, :2])
+    # Calculate silhouette scores for different values of k
+    silhouette_scores = []
+    k_values = range(2, 11)  # Start from 2 because silhouette score requires at least 2 clusters
+    for k in k_values:
+        model = KMeans(n_clusters=k, init='k-means++', random_state=42)
+        clusters = model.fit_predict(PCA_components.iloc[:, :2])
+        score = silhouette_score(PCA_components.iloc[:, :2], clusters)
+        silhouette_scores.append(score)
 
-    visualizer = SilhouetteVisualizer(model, size=(1080, 500))
-    visualizer.fit(PCA_components.iloc[:, :2])  # Fit the data to the visualizer
-    visualizer.show()  # Finalize and render the figure
-
-    # Add this line to display the silhouette plot in Streamlit
-    st.pyplot(visualizer.fig)  # Display the plot
+    # Plot the silhouette scores
+    plt.figure(figsize=(10, 6))
+    plt.plot(k_values, silhouette_scores, marker='o')
+    plt.title('Silhouette Coefficient for Different k')
+    plt.xlabel('Number of Clusters (k)')
+    plt.ylabel('Silhouette Score')
+    plt.xticks(k_values)
+    plt.grid()
+    
+    # Display the plot in Streamlit
+    st.pyplot(plt)  # Display the plot
 
 def cluster_visualization(df):
     newdf = one_hot_encoding(df)
@@ -488,13 +509,11 @@ elif page == "Analysis and Insights":
             st.markdown("### Implementation of PCA")
             st.markdown("<p style='font-size: 15px;'>PCA is a technique that helps us reduce the dimension of a dataset. When we run PCA on a data frame, new components are created. These components explain the maximum variance in the model. We can select a subset of these variables and include them into the K-means model.</p>", unsafe_allow_html=True)
             pcacomponents(df)
-            st.markdown("<p style='font-size: 15px;'>Using the elbow method We can observe that the optimal number of clusters is k=4. Now we can run a K-Means using as n_clusters the number 4.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 15px;'>This chart shows us each PCA component, along with its variance. Based on this visualization, we can see that the first two PCA components explain more than 70% of the dataset variance. We can feed these two components into the model.</p>", unsafe_allow_html=True)
         with col2:
             st.markdown("### Elbow Method for the Clustering Model")
             elbow_method(df)
-            st.markdown("<p style='font-size: 15px;'> The silhouette score of this model is about 0.35. This isn't a bad model, but we can do better and try getting higher cluster separation.</p>", unsafe_allow_html=True)
-        st.markdown("### Silhouette Coefficient Metric")
-        silhouette_coefficient_metric(df)
+            st.markdown("<p style='font-size: 15px;'>Using the elbow method We can observe that the optimal number of clusters is k=4. Now we can run a K-Means using as n_clusters the number 4.</p>", unsafe_allow_html=True)
         st.markdown("### Visualization of clusters built by the model")
         cluster_visualization(df)
 
