@@ -360,28 +360,35 @@ def one_hot_encoding(df):
     # Return the one-hot encoded DataFrame
     return newdf
 
-def pcacomponents(df):
-    newdf = one_hot_encoding(df)
+def pcacomponents(df, show=True):
+    # Assuming one_hot_encoding function is already defined elsewhere
+    newdf = one_hot_encoding(df)  
+    
+    # Perform PCA with 4 components
     pca = PCA(n_components=4)
     principalComponents = pca.fit_transform(newdf)
-    features = range(pca.n_components_)
-    plt.figure(figsize=(16,8))
-    plt.bar(features, pca.explained_variance_ratio_, color='blue')  # Changed to solid blue
-    plt.xlabel('PCA features')
-    plt.ylabel('variance %')
-    plt.xticks(features)
-
+    
     # Create a DataFrame for PCA components
     PCA_components = pd.DataFrame(principalComponents)
 
-    # Display the plot in Streamlit
-    st.pyplot(plt)  # Display the plot
+    # If show is True, display the PCA chart
+    if show:
+        features = range(pca.n_components_)
+        plt.figure(figsize=(16,8))
+        plt.bar(features, pca.explained_variance_ratio_, color='blue')  # Changed to solid blue
+        plt.xlabel('PCA features')
+        plt.ylabel('Variance (%)')
+        plt.xticks(features)
+
+        # Display the plot in Streamlit
+        st.pyplot(plt)  # Display the plot
     
-    return PCA_components  # Return the PCA components
+    # Return the PCA components DataFrame
+    return PCA_components
 
 def elbow_method(df):
     # Call pcacomponents to get PCA_components
-    PCA_components = pcacomponents(df)
+    PCA_components = pcacomponents(df, show=False)
 
     # Check if PCA_components is None
     if PCA_components is None:
@@ -437,9 +444,34 @@ def silhouette_coefficient_metric(df):
     # Display the plot in Streamlit
     st.pyplot(plt)  # Display the plot
 
+from yellowbrick.cluster import SilhouetteVisualizer
+
+def show_silhouette(df, n_clusters=4):
+    """
+    Displays the silhouette graph for the PCA components.
+    Calls pcacomponents function internally to get PCA components.
+    """
+    
+    # Call the pcacomponents function to get PCA components
+    PCA_components = pcacomponents(df, show=False)
+
+
+    # Perform KMeans clustering
+    model1 = KMeans(n_clusters=n_clusters, init='k-means++', random_state=42)
+    
+    # Create silhouette visualizer
+    visualizer = SilhouetteVisualizer(model1, size=(1080, 500))
+    
+    # Fit and show silhouette plot for the first two PCA components
+    visualizer.fit(PCA_components.iloc[:, :2])  # Use only the first two components for visualization
+    visualizer.show()  # Finalize and render the figure
+
+    # Display the visualizer plot in Streamlit
+    st.pyplot(plt)  # Display the plot explicitly in Streamlit
+
 def cluster_visualization(df):
     newdf = one_hot_encoding(df)
-    PCA_components = pcacomponents(df)
+    PCA_components = pcacomponents(df, show=False)
     model = KMeans(n_clusters=4, init='k-means++', random_state=42)
     clusters = model.fit_predict(PCA_components.iloc[:,:2])
     newdf["label"] = clusters
@@ -488,8 +520,8 @@ if page == "Introduction":
     st.write("_On Elbow Method_")
     st.write("")
     
-    st.markdown("##### Silhouette Coefficient")
-    st.write("_On Silhouette Scores_")
+    st.markdown("##### Silhouette Plot")
+    st.write("_On Silhouette Plot")
     st.write("")
 
 elif page == "Data Exploration and Preparation":
@@ -537,7 +569,6 @@ elif page == "Data Exploration and Preparation":
         with col3:
             scatter_annual_income_vs_spending_score(df)
             st.write("The scatter plot illustrates the relationship between annual income and spending score, with separate trendlines for males and females. Both trendlines show almost no slope, indicating that there is little to no correlation between annual income and spending score for both genders. This suggests that changes in annual income have little impact on spending score for either males or females.")
-            
 
         st.write("")
         
@@ -552,39 +583,69 @@ elif page == "Data Exploration and Preparation":
 elif page == "Analysis and Insights":
     st.subheader("Analysis and Insights")
     
-    # Create tabs
     tab1, tab2 = st.tabs(["Data Pre-processing", "K-Means Clustering"])
+    
     with tab1:
-        st.markdown("<p style='font-size: 15px;'>Since gender is a categorical variable, it needs to be encoded and converted into numeric. All other variables will be scaled to follow a normal distribution before being fed into the model. We will standardize these variables with a mean of 0 and a standard deviation of 1.</p>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+        st.write("Since gender is a categorical variable, it needs to be encoded and converted into numeric. All other variables will be scaled to follow a normal distribution before being fed into the model. We will standardize these variables with a mean of 0 and a standard deviation of 1.")
+        col1, col2 = st.columns(2, gap='medium')
         with col1:
-            st.write("### Standardizing variables")
-            st.markdown("<p style='font-size: 15px;'>First, let's standardize all variables in the dataset to get them around the same scale.</p>", unsafe_allow_html=True)
-            standardized_df = standardize_variables(df)  # Call the function
-            # Apply styling when displaying
-            st.dataframe(standardized_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))  # Display the styled DataFrame
+            st.write("#### Standardizing variables")
+            st.write("First, let's standardize all variables in the dataset to get them around the same scale.", )
+            standardized_df = standardize_variables(df) 
+            
+           
+            st.dataframe(standardized_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}), use_container_width=True)  # Display the styled DataFrame
         with col2:
-            st.write("### One-Hot Encoding")
-            st.markdown("<p style='font-size: 15px;'>Second, (to be added)</p>", unsafe_allow_html=True)
+            st.write("#### One-Hot Encoding")
+            st.write("Second, (to be added)")
             # Call the one_hot_encoding function and store the result
             one_hot_encoded_df = one_hot_encoding(df)
                     
             # Display the one-hot encoded DataFrame without styling
-            st.dataframe(one_hot_encoded_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}))
+            st.dataframe(one_hot_encoded_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}), use_container_width=True)
     
     with tab2:
         st.markdown("<p style='font-size: 15px;'>(K-Means clustering intro)</p>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, gap='large')
         with col1:
-            st.markdown("### Implementation of PCA")
-            st.markdown("<p style='font-size: 15px;'>PCA is a technique that helps us reduce the dimension of a dataset. When we run PCA on a data frame, new components are created. These components explain the maximum variance in the model. We can select a subset of these variables and include them into the K-means model.</p>", unsafe_allow_html=True)
-            pcacomponents(df)
-            st.markdown("<p style='font-size: 15px;'>This chart shows us each PCA component, along with its variance. Based on this visualization, we can see that the first two PCA components explain more than 70% of the dataset variance. We can feed these two components into the model.</p>", unsafe_allow_html=True)
+            st.markdown("#### Implementation of PCA")
+            pcacomponents(df, show=True)
+            st.write("PCA (Principal Component Analysis) was run to reduce the dimensionality of the dataset while preserving as much variance as possible. The chart displays the variance explained by each PCA component. It shows that the first two PCA components together account for more than 70% of the dataset's variance, indicating that these two components are sufficient for feeding into the model.")
         with col2:
-            st.markdown("### Elbow Method for the Clustering Model")
+            st.markdown("#### Elbow Method for the Clustering Model")
             elbow_method(df)
-            st.markdown("<p style='font-size: 15px;'>Using the elbow method We can observe that the optimal number of clusters is k=4. Now we can run a K-Means using as n_clusters the number 4.</p>", unsafe_allow_html=True)
-        st.markdown("### Visualization of clusters built by the model")
+            st.write("The elbow method plot shows a sharp decrease in inertia from 1 to 4 clusters, then a more gradual decline. The elbow point, where the rate of decrease changes significantly, is around 4 clusters. This suggests that increasing the number of clusters beyond 4 may not significantly improve the clustering quality.")
+            
+        
+        st.write("")
+        st.write("")
+        
+        st.markdown("#### Silhouette Coefficient for Optimal k")
+        col1, col2, col3 = st.columns([1, 4, 1], gap='large')
+
+        with col2:
+            show_silhouette(df, n_clusters=4)
+            
+        st.write("The silhouette plot provides a visual representation of the clustering quality. In this case, the overall silhouette score is moderate, suggesting that the clustering solution is reasonable but might not be optimal. Clusters 1 and 2 appear to be more cohesive, with data points that are well-matched to their own clusters. Clusters 0 and 3 have more variability in their data points, with some points being well-matched and others less so.")
+        col1, col2, col3, col4 = st.columns(4, gap='medium')
+        with col1:
+            st.markdown("##### Cluster 0")
+            st.write("Cluster 0 has a wide range of silhouette coefficients, indicating that some data points are well-clustered, while others might be misclassified or on the boundary. The average silhouette coefficient for this cluster is lower compared to other clusters, suggesting that it might not be as well-defined as the others.")
+        
+        with col2:
+            st.markdown("##### Cluster 1")
+            st.write("Cluster 1 has a narrower range of silhouette coefficients, suggesting that its data points are more consistently well-clustered. The average silhouette coefficient for this cluster is higher than cluster 0, indicating that, on average, the data points in this cluster are better matched to their own cluster.")
+          
+        with col3:
+            st.markdown("##### Cluster 2")
+            st.write("Cluster 2 has a similar pattern to cluster 1, with a narrow range of silhouette coefficients and a relatively high average silhouette coefficient. This suggests that the data points in this cluster are consistently well-matched to their own cluster and poorly matched to other clusters.")  
+          
+        with col4:
+            st.markdown("##### Cluster 3")
+            st.write("Cluster 3 has a wide range of silhouette coefficients, similar to cluster 0. However, the average silhouette coefficient for this cluster is higher, indicating that it might be a more cohesive cluster overall. Despite the outliers, the overall average is higher than cluster 0, suggesting that, on average, the data points in this cluster are better matched to their own cluster.")
+        
+        st.write("")
+        st.markdown("#### Visualization of clusters built by the model")  
         cluster_visualization(df)
 
 elif page == "Conclusion":
