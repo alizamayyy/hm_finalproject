@@ -12,7 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 st.set_page_config(page_title="Customer Segregation", page_icon=":beer:", layout="wide", initial_sidebar_state="auto")
 
-    # Load dataset
+# Load dataset
 df = pd.read_csv('Mall_Customers.csv')
 columns = ['CustomerID', 'Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']
 
@@ -21,9 +21,10 @@ def show_csv(df):
     st.dataframe(
         df.style.background_gradient(cmap='Pastel2')
         .set_properties(**{'font-family': 'Segoe UI'})
-        .hide(axis='index')
+        .hide(axis='index'),
+        use_container_width=True  # Makes the dataframe span the column's width
     )
-
+    
 def show_col_names():
     col_descriptions = {
         'CustomerID': 'Unique ID assigned to the customer',
@@ -33,7 +34,7 @@ def show_col_names():
         'Spending Score (1-100)': 'Score assigned by the mall based on customer behavior and spending nature'
     }
     
-    st.markdown("### Column Descriptions")
+    st.markdown("#### Column Descriptions")
     for col, desc in col_descriptions.items():
         st.markdown(f"**{col}**  \n{desc}")
 
@@ -82,8 +83,11 @@ def show_cleaned_data(df):
         
     st.write("\n")
 
+import plotly.express as px
+import streamlit as st
+
 def plot_histograms(df):
-    st.write("### Distribution of Continuous Variables")
+    st.write("#### Distribution of Variables")
     
     # Create three columns
     col1, col2, col3 = st.columns(3)
@@ -106,13 +110,15 @@ def plot_histograms(df):
                 xaxis_title=col_name,
                 yaxis_title="Count",
                 showlegend=False,
-                title_x=0.5,
-                height=400  # Fixed height for better alignment
+                title_x=0,  # Left-aligned title
+                title_y=0.98,  # Position the title close to the top
+                height=400,  # Fixed height for better alignment
+                margin=dict(t=50, b=50, l=50, r=50)  # Optional: Adjust margins for better spacing
             )
             st.plotly_chart(fig, use_container_width=True)
 
 def plot_boxplots(df):
-    st.write("### Box Plots of Continuous Variables")
+    # st.write("#### Box Plots of Continuous Variables")
     
     # Create box plots for Age, Annual Income, and Spending Score
     numeric_cols = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
@@ -126,13 +132,16 @@ def plot_boxplots(df):
     )
     fig.update_layout(
         showlegend=False,
-        title_x=0.5,
-        yaxis_title="Value"
+        title_x=0,  # Left-aligned title
+        title_y=0.98,  # Position the title close to the top
+        yaxis_title="Value",
+        height=400,  # Optional: Set fixed height for better alignment
+        margin=dict(t=50, b=50, l=50, r=50)  # Optional: Adjust margins for better spacing
     )
     st.plotly_chart(fig, use_container_width=True)
-
+    
 def plot_donut(df):
-    st.write("### Gender Distribution")
+    # st.write("### Gender Distribution")
     
     # Calculate gender distribution
     gender_counts = df['Gender'].value_counts()
@@ -149,7 +158,8 @@ def plot_donut(df):
     
     # Update layout
     fig.update_layout(
-        title_x=0.5,
+        title_x=0,  # Left-aligned title
+        title_y=0.98,  # Position the title close to the top
         annotations=[dict(text='Gender', x=0.5, y=0.5, font_size=20, showarrow=False)]
     )
     
@@ -188,7 +198,11 @@ def spending_score_vs_annual_income(df):
     # Clear the figure to prevent memory issues
     plt.clf()
 
+import plotly.express as px
+import streamlit as st
+
 def scatter_age_vs_annual_income(df):
+    # st.markdown("##### Age vs. Annual Income")
     # Create the scatter plot with regression line grouped by gender
     fig = px.scatter(
         df,
@@ -200,20 +214,35 @@ def scatter_age_vs_annual_income(df):
         color_discrete_sequence=['#FF69B4', '#4169E1']  # Pink and Blue colors
     )
     
-    # Update layout
+    # Update layout with fixed size
     fig.update_layout(
-        title='',
-        title_x=0.5,
-        height=400,
+        title='Age vs. Annual Income',  # Set title
+        title_x=0,  # Left-aligned title
+        title_y=0.98,  # Position the title close to the top
+        width=600,  # Fixed width
+        height=400,  # Fixed height
         xaxis_title="Age",
         yaxis_title="Annual Income (k$)",
-        legend_title="Gender"
+        legend_title=None,  # Remove legend title
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="bottom",  # Anchor legend at the bottom
+            y=-0.4,  # Position legend below the plot
+            xanchor="center",  # Center the legend horizontally
+            x=0.5  # Center the legend horizontally
+        )
     )
     
     # Display the plot
     st.plotly_chart(fig, use_container_width=True)
 
+
+import plotly.express as px
+import streamlit as st
+
 def scatter_age_vs_spending_score(df):
+    # st.write("### Age vs. Spending Score")
+    
     # Create the scatter plot with regression line grouped by gender
     fig = px.scatter(
         df,
@@ -225,20 +254,36 @@ def scatter_age_vs_spending_score(df):
         color_discrete_sequence=['#FF69B4', '#4169E1']  # Pink and Blue colors
     )
     
-    # Update layout
+    # Update layout with fixed size
     fig.update_layout(
-        title='',
-        title_x=0.5,
-        height=400,
+        title='Age vs. Spending Score',  # Set title
+        title_x=0,  # Left-aligned title
+        title_y=0.98,  # Position the title close to the top
+        width=600,  # Fixed width
+        height=400,  # Fixed height
         xaxis_title="Age",
         yaxis_title="Spending Score (1-100)",
-        legend_title="Gender"
+        legend_title=None,  # Remove legend title
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="bottom",  # Anchor legend at the bottom
+            y=-0.4,  # Position legend below the plot
+            xanchor="center",  # Center the legend horizontally
+            x=0.5  # Center the legend horizontally
+        )
     )
     
     # Display the plot
     st.plotly_chart(fig, use_container_width=True)
 
+
+
+import plotly.express as px
+import streamlit as st
+
 def scatter_annual_income_vs_spending_score(df):
+    # st.write("### Annual Income vs. Spending Score")
+     
     # Create the scatter plot with regression line grouped by gender
     fig = px.scatter(
         df,
@@ -250,18 +295,28 @@ def scatter_annual_income_vs_spending_score(df):
         color_discrete_sequence=['#FF69B4', '#4169E1']  # Pink and Blue colors
     )
     
-    # Update layout
+    # Update layout with fixed size
     fig.update_layout(
-        title='',
-        title_x=0.5,
-        height=400,
+        title='Annual Income vs. Spending Score',  # Set title
+        title_x=0,  # Left-aligned title
+        title_y=0.98,  # Position the title close to the top
+        width=600,  # Fixed width
+        height=400,  # Fixed height
         xaxis_title="Annual Income (k$)",
         yaxis_title="Spending Score (1-100)",
-        legend_title="Gender"
+        legend_title=None,  # Remove legend title
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="bottom",  # Anchor legend at the bottom
+            y=-0.4,  # Position legend below the plot
+            xanchor="center",  # Center the legend horizontally
+            x=0.5  # Center the legend horizontally
+        )
     )
     
     # Display the plot
     st.plotly_chart(fig, use_container_width=True)
+
 
 def correlation_heatmap(df):
     # Select only numeric columns for correlation
@@ -353,7 +408,6 @@ def elbow_method(df):
     # Display the plot in Streamlit
     st.pyplot(plt)  # Display the plot
 
-
 def silhouette_coefficient_metric(df):
     PCA_components = pcacomponents(df)
 
@@ -403,7 +457,6 @@ def cluster_visualization(df):
     # Display the plot in Streamlit
     st.pyplot(fig)  # Use st.pyplot instead of plt.show()
     
-
 # Navigation bar in sidebar
 page = st.sidebar.selectbox("Select a section:", ["Introduction", "Data Exploration and Preparation", "Analysis and Insights", "Conclusion"])
 
@@ -414,67 +467,86 @@ st.markdown("<small>by Halimaw Magbeg</small>", unsafe_allow_html=True)
 
 # Content based on navigation selection
 if page == "Introduction":
-    st.subheader("Introduction")
-
+    
+    st.write("_Small introduction to our prokject._")
+    st.write("")
+    st.write("")
+    
+    st.markdown("##### Customer Segmentation")
+    st.write("_On Customer Segmentation._")
+    st.write("")
+    
+    st.markdown("##### K-Means Clustering")
+    st.write("_On K-Means Clustering._")
+    st.write("")
+    
+    st.markdown("##### PCA Components")
+    st.write("_On PCA_")
+    st.write("")
+    
+    st.markdown("##### Elbow Method")
+    st.write("_On Elbow Method_")
+    st.write("")
+    
+    st.markdown("##### Silhouette Coefficient")
+    st.write("_On Silhouette Scores_")
+    st.write("")
 
 elif page == "Data Exploration and Preparation":
-    st.subheader("Dataset Overview")
+    st.subheader("Data Exploration and Preparation")
     
-    # Create tabs
-    tab1, tab2, tab3 = st.tabs(["Data Exploration and Preparation", "Data Visualization", "Relationships and Patterns"])
+    tab1, tab2, tab3 = st.tabs(["Dataset Overview", "Data Visualization", "Relationships and Patterns"])
     
     with tab1:
-        # Create two columns
-        col1, col2 = st.columns([1, 1])  # 2:1 ratio for better layout
+        st.subheader("About the dataset")
+        st.write("_Dataset Description_")
+        col1, col2 = st.columns([1.5, 1], gap='medium') 
         
-        # Show DataFrame in the left column
         with col1:
             show_csv(df)
         
-        # Show column descriptions in the right column
         with col2:
             show_col_names()
-        
+
+        st.write("")
         show_cleaned_data(df)
     
     with tab2:
         plot_histograms(df)
-        col1, col2 = st.columns(2)
+        st.write("Most customers are between the ages of 25 and 35, with an average age of 39, suggesting a younger customer base. The average annual income ranges from 60,000 USD to 80,000 USD, indicating that many customers have lower incomes. Additionally, spending scores are mostly between 40 and 60, and the distribution appears nearly symmetric, suggesting that the spending scores are evenly distributed across the customer base.")
+        st.write("")
+        
+        col1, col2 = st.columns(2, gap='large')
         with col1:
             plot_boxplots(df)
+            st.write("The box plot reveals that spending scores are relatively evenly distributed, with a median around 50. Annual income, however, is skewed right, indicating a majority of lower-income individuals with a few high-income outliers. Age, while fairly evenly distributed, is slightly skewed right, indicating a slightly higher proportion of younger customers. The outlier in annual income suggests the presence of a high-net-worth individual, potentially influencing the overall distribution.")
+              
         with col2:
             plot_donut(df)
+            st.write("As we can see, 56% of customers are female, while 44% are male. The donut plot suggests a slight majority of female customers, reflecting a somewhat balanced yet slightly skewed gender distribution. ")
 
     with tab3:
-        st.subheader("Relationship between Features")
+        st.markdown("#### Relationship with Linear Regression Line of Best Fit")
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.write("### Age vs. Spending Score")
-            age_vs_spending_score(df)
-        with col2:
-            st.write("### Age vs. Annual Income")
-            age_vs_annual_income(df)
-        with col3:
-            st.write("### Spending Score vs. Annual Income")
-            spending_score_vs_annual_income(df)
-        
-        st.subheader("Relationship with Linear Regression Line of Best Fit")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.write("### Age vs. Annual Income")
             scatter_age_vs_annual_income(df)
-        with col2:
-            st.write("### Age vs. Spending Score")
+            st.write("The scatter plot shows the relationship between age and annual income, with separate trendlines for each gender. The trendlines appear to have a negative correlation, indicating that, as age increases, annual income tends to decrease within each gender group. This suggests an inverse relationship between age and annual income for both males and females.")
+        with col2:      
             scatter_age_vs_spending_score(df)
+            st.write("The scatter plot depicts the relationship between age and spending score, with separate trendlines for males and females. Both trendlines show a downward slope, indicating that as age increases, the spending score tends to decrease for both genders. This suggests a negative correlation between age and spending score for both males and females.")
         with col3:
-            st.write("### Annual Income vs. Annual Income")
             scatter_annual_income_vs_spending_score(df)
+            st.write("The scatter plot illustrates the relationship between annual income and spending score, with separate trendlines for males and females. Both trendlines show almost no slope, indicating that there is little to no correlation between annual income and spending score for both genders. This suggests that changes in annual income have little impact on spending score for either males or females.")
+            
 
-        st.subheader("Correlation between Features")
-        col1, col2, col3 = st.columns(3)
+        st.write("")
+        
+        st.markdown("#### Correlation between Features")
+        col1, col2, col3 = st.columns([1, 1.5, 1])
         with col2:
-            st.write("### Correlation Heatmap")
             correlation_heatmap(df)
+        st.write("The correlation heatmap reveals a moderate negative correlation between age and spending score, suggesting that younger customers tend to spend more. However, there is a weak positive correlation between annual income and spending score, indicating that income alone may not be a strong predictor of spending behavior. Age and annual income are almost unrelated. These insights can guide marketing strategies by targeting younger demographics and considering factors beyond income to influence spending habits.")
+        
         
 
 elif page == "Analysis and Insights":
