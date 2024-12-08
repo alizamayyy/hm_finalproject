@@ -781,9 +781,7 @@ elif page == "Data Exploration and Preparation":
             st.markdown(
                 """
                 <div style="text-align: justify;">
-                    The scatter plot shows the relationship between age and annual income, with separate trendlines for each gender. 
-                    The trendlines appear to have a negative correlation, indicating that, as age increases, annual income tends to decrease within each gender group. 
-                    This suggests an inverse relationship between age and annual income for both males and females.
+                    The scatter plot shows the relationship between age and annual income, with separate trendlines for each gender. The trendlines indicate little to no correlation, suggesting that as age increases, annual income shows minimal or no consistent trend for both males and females.
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -901,6 +899,7 @@ elif page == "Analysis and Insights":
         st.write("")
         
         st.markdown("#### Silhouette Coefficient for Optimal k")
+        st.write("A silhouette plot is a tool that shows how well data points fit into their clusters, testing cohesion and separation. Cohesion checks how closely data points are grouped within a cluster, while separation measures how distinct the clusters are from each other. A higher silhouette score (close to 1) indicates both strong cohesion and good separation.")
         col1, col2, col3 = st.columns([1, 4, 1], gap='large')
 
         with col2:
@@ -909,7 +908,7 @@ elif page == "Analysis and Insights":
         st.markdown(
             """
             <div style="text-align: justify; margin-bottom: 30px">
-                The silhouette plot provides a visual representation of the clustering quality. In this case, the overall silhouette score 
+                In this silhoutte plot, the overall silhouette score 
                 is moderate, suggesting that the clustering solution is reasonable but might not be optimal. Clusters 1 and 2 appear to be 
                 more cohesive, with data points that are well-matched to their own clusters. Clusters 0 and 3 have more variability in their 
                 data points, with some points being well-matched and others less so.
