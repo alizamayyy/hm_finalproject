@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_samples, silhouette_score
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 import base64
 
 st.set_page_config(page_title="Customer Segregation", page_icon="👥", layout="wide", initial_sidebar_state="auto")
@@ -216,9 +217,6 @@ def spending_score_vs_annual_income(df):
     # Clear the figure to prevent memory issues
     plt.clf()
 
-import plotly.express as px
-import streamlit as st
-
 def scatter_age_vs_annual_income(df):
     # st.markdown("##### Age vs. Annual Income")
     # Create the scatter plot with regression line grouped by gender
@@ -253,10 +251,6 @@ def scatter_age_vs_annual_income(df):
     
     # Display the plot
     st.plotly_chart(fig, use_container_width=True)
-
-
-import plotly.express as px
-import streamlit as st
 
 def scatter_age_vs_spending_score(df):
     # st.write("### Age vs. Spending Score")
@@ -293,11 +287,6 @@ def scatter_age_vs_spending_score(df):
     
     # Display the plot
     st.plotly_chart(fig, use_container_width=True)
-
-
-
-import plotly.express as px
-import streamlit as st
 
 def scatter_annual_income_vs_spending_score(df):
     # st.write("### Annual Income vs. Spending Score")
@@ -369,14 +358,18 @@ def one_hot_encoding(df):
     # Standardize the variables first
     scaled_features = standardize_variables(df)
     
-    # One-hot encoding for the 'Gender' column
-    gender = df['Gender']
-    newdf = scaled_features.join(gender)
-    newdf = pd.get_dummies(newdf, prefix=None, prefix_sep='_', dummy_na=False, columns=None, sparse=False, drop_first=False, dtype=None)
-    newdf = newdf.drop(['Gender_Male'], axis=1)
+    # Convert 'Gender' to 0 or 1 (0 for Male, 1 for Female)
+    df['Gender_Female'] = df['Gender'].apply(lambda x: 1 if x == 'Female' else 0)
     
-    # Return the one-hot encoded DataFrame
+    # Drop the original 'Gender' column
+    df = df.drop(columns=['Gender'])
+    
+    # Join the standardized features and the modified 'Gender_Female' column
+    newdf = scaled_features.join(df['Gender_Female'])
+    
+    # Return the modified DataFrame
     return newdf
+
 
 def pcacomponents(df, show=True):
     # Assuming one_hot_encoding function is already defined elsewhere
@@ -462,30 +455,45 @@ def silhouette_coefficient_metric(df):
     # Display the plot in Streamlit
     st.pyplot(plt)  # Display the plot
 
-from yellowbrick.cluster import SilhouetteVisualizer
-
 def show_silhouette(df, n_clusters=4):
-    """
-    Displays the silhouette graph for the PCA components.
-    Calls pcacomponents function internally to get PCA components.
-    """
-    
-    # Call the pcacomponents function to get PCA components
+
+    # Assuming you have a PCA function called pcacomponents
     PCA_components = pcacomponents(df, show=False)
 
-
     # Perform KMeans clustering
-    model1 = KMeans(n_clusters=n_clusters, init='k-means++', random_state=42)
-    
-    # Create silhouette visualizer
-    visualizer = SilhouetteVisualizer(model1, size=(1080, 500))
-    
-    # Fit and show silhouette plot for the first two PCA components
-    visualizer.fit(PCA_components.iloc[:, :2])  # Use only the first two components for visualization
-    visualizer.show()  # Finalize and render the figure
+    model = KMeans(n_clusters=n_clusters, init='k-means++', random_state=42)
+    clusters = model.fit_predict(PCA_components.iloc[:, :2])  # Use first two PCA components
 
-    # Display the visualizer plot in Streamlit
-    st.pyplot(plt)  # Display the plot explicitly in Streamlit
+    # Calculate silhouette score for the current clustering
+    silhouette_avg = silhouette_score(PCA_components.iloc[:, :2], clusters)
+
+    # Plot the silhouette graph
+    plt.figure(figsize=(10, 6))
+    plt.title(f"Silhouette Plot for {n_clusters} Clusters (Average Score: {silhouette_avg:.2f})")
+
+    # Plot silhouette for each sample
+    sample_silhouette_values = silhouette_samples(PCA_components.iloc[:, :2], clusters)
+    y_lower = 10
+    for i in range(n_clusters):
+        cluster_silhouette_values = sample_silhouette_values[clusters == i]
+        cluster_silhouette_values.sort()
+        size_cluster_i = cluster_silhouette_values.shape[0]
+        y_upper = y_lower + size_cluster_i
+        color = plt.cm.Spectral(float(i) / n_clusters)
+        plt.fill_betweenx(range(y_lower, y_upper), 0, cluster_silhouette_values, facecolor=color, edgecolor=color, alpha=0.7)
+        y_lower = y_upper + 10  # Leave some space between clusters
+
+    # Draw the vertical line for the average silhouette score
+    plt.axvline(x=silhouette_avg, color="red", linestyle="--")
+
+    # Labels and formatting
+    plt.yticks([])
+    plt.xlabel("Silhouette Coefficient Values")
+    plt.ylabel("Cluster Label")
+    plt.grid()
+
+    # Show the plot in Streamlit
+    st.pyplot(plt)
 
 def cluster_visualization(df):
     newdf = one_hot_encoding(df)
@@ -739,7 +747,7 @@ elif page == "Data Exploration and Preparation":
     
     with tab1:
         st.subheader("About the dataset")
-        st.write("_Dataset Description_")
+        st.write("The dataset consists of customer information collected from a mall. This is what the dataset looks like:")
         col1, col2 = st.columns([1.5, 1], gap='medium') 
         
         with col1:
@@ -850,7 +858,7 @@ elif page == "Analysis and Insights":
             st.dataframe(standardized_df.style.background_gradient(cmap='plasma').set_properties(**{'font-family': 'Segoe UI'}), use_container_width=True)  # Display the styled DataFrame
         with col2:
             st.write("#### One-Hot Encoding")
-            st.write("Second, (to be added)")
+            st.write("Second, let's convert categorical variables into numerical ones using one-hot encoding.")
             # Call the one_hot_encoding function and store the result
             one_hot_encoded_df = one_hot_encoding(df)
                     
@@ -900,7 +908,7 @@ elif page == "Analysis and Insights":
             
         st.markdown(
             """
-            <div style="text-align: justify;">
+            <div style="text-align: justify; margin-bottom: 30px">
                 The silhouette plot provides a visual representation of the clustering quality. In this case, the overall silhouette score 
                 is moderate, suggesting that the clustering solution is reasonable but might not be optimal. Clusters 1 and 2 appear to be 
                 more cohesive, with data points that are well-matched to their own clusters. Clusters 0 and 3 have more variability in their 
