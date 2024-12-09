@@ -674,9 +674,9 @@ if page == "Introduction":
     # Encode the image
     bataluna = img_to_base64("images/bataluna.jpg")
     mier = img_to_base64("images/mier.png")
-    # alegam = img_to_base64("images/alegam.png")
-    # madaya = img_to_base64("images/madaya.jpg")
-    # cabo = img_to_base64("images/cabo.jpg")
+    alegam = img_to_base64("images/alegam.png")
+    madaya = img_to_base64("images/madaya.jpg")
+    cabo = img_to_base64("images/cabo.jpg")
 
     # Create a 3x2 grid of divs with rounded corners, drop shadows, and hover effects
     grid_html = """
@@ -724,9 +724,9 @@ if page == "Introduction":
     grid_items = [
         (bataluna, "Aliza May Bataluna"),
         (mier, "France Gieb Mier"),
-        # (alegam, "Cielo Alegam"),
-        # (madaya, "Angela Madaya"),
-        # (cabo, "Kerch Cabo"),
+        (alegam, "Cielo Alegam"),
+        (madaya, "Angela Madaya"),
+        (cabo, "Kerch Cabo"),
     ]
 
     for img, label in grid_items:
