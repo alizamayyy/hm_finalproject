@@ -384,9 +384,12 @@ def pcacomponents(df, show=True):
 
     # If show is True, display the PCA chart
     if show:
+        custom_colors = ["blue", "green", "red", "purple"] 
         features = range(pca.n_components_)
         plt.figure(figsize=(16,8))
-        plt.bar(features, pca.explained_variance_ratio_, color='blue')  # Changed to solid blue
+        for i, feature in enumerate(features):
+            bar_color = custom_colors[i % len(custom_colors)]  # Cycle through cluster colors
+            plt.bar(i, pca.explained_variance_ratio_[i], color=bar_color) # Changed to solid blue
         plt.xlabel('PCA features')
         plt.ylabel('Variance (%)')
         plt.xticks(features)
@@ -467,6 +470,8 @@ def show_silhouette(df, n_clusters=4):
     # Calculate silhouette score for the current clustering
     silhouette_avg = silhouette_score(PCA_components.iloc[:, :2], clusters)
 
+    # Define custom colors for clusters
+    custom_colors = ["blue", "green", "red", "purple"]  # Add more colors if needed for additional clusters
     # Plot the silhouette graph
     plt.figure(figsize=(10, 6))
     plt.title(f"Silhouette Plot for {n_clusters} Clusters (Average Score: {silhouette_avg:.2f})")
@@ -479,7 +484,7 @@ def show_silhouette(df, n_clusters=4):
         cluster_silhouette_values.sort()
         size_cluster_i = cluster_silhouette_values.shape[0]
         y_upper = y_lower + size_cluster_i
-        color = plt.cm.Spectral(float(i) / n_clusters)
+        color = custom_colors[i % len(custom_colors)]  
         plt.fill_betweenx(range(y_lower, y_upper), 0, cluster_silhouette_values, facecolor=color, edgecolor=color, alpha=0.7)
         y_lower = y_upper + 10  # Leave some space between clusters
 
@@ -501,19 +506,82 @@ def cluster_visualization(df):
     model = KMeans(n_clusters=4, init='k-means++', random_state=42)
     clusters = model.fit_predict(PCA_components.iloc[:,:2])
     newdf["label"] = clusters
- 
-    fig = plt.figure(figsize=(12,12))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(newdf.Age[newdf["label"] == 0], newdf["Annual Income (k$)"][newdf["label"] == 0], newdf["Spending Score (1-100)"][newdf["label"] == 0], c='blue', s=80)
-    ax.scatter(newdf.Age[newdf["label"] == 1], newdf["Annual Income (k$)"][newdf["label"] == 1], newdf["Spending Score (1-100)"][newdf["label"] == 1], c='red', s=80)
-    ax.scatter(newdf.Age[newdf["label"] == 2], newdf["Annual Income (k$)"][newdf["label"] == 2], newdf["Spending Score (1-100)"][newdf["label"] == 2], c='green', s=80)
-    ax.scatter(newdf.Age[newdf["label"] == 3], newdf["Annual Income (k$)"][newdf["label"] == 3], newdf["Spending Score (1-100)"][newdf["label"] == 3], c='purple', s=80)  # Changed color for clarity
-    ax.set_xlabel("Age")
-    ax.set_ylabel("Annual Income (k$)")
-    ax.set_zlabel("Spending Score (1-100)")
-    
-    # Display the plot in Streamlit
-    st.pyplot(fig)  # Use st.pyplot instead of plt.show()
+
+    # Create 3D scatter plot using Plotly
+    trace0 = go.Scatter3d(
+        x=newdf.Age[newdf["label"] == 0],
+        y=newdf["Annual Income (k$)"][newdf["label"] == 0],
+        z=newdf["Spending Score (1-100)"][newdf["label"] == 0],
+        mode='markers',
+        marker=dict(
+            size=8,
+            color='blue',
+            opacity=0.8
+        ),
+        name='Cluster 0',
+        showlegend=False
+    )
+
+    trace1 = go.Scatter3d(
+        x=newdf.Age[newdf["label"] == 1],
+        y=newdf["Annual Income (k$)"][newdf["label"] == 1],
+        z=newdf["Spending Score (1-100)"][newdf["label"] == 1],
+        mode='markers',
+        marker=dict(
+            size=8,
+            color='red',
+            opacity=0.8
+        ),
+        name='Cluster 1',
+        showlegend=False
+    )
+
+    trace2 = go.Scatter3d(
+        x=newdf.Age[newdf["label"] == 2],
+        y=newdf["Annual Income (k$)"][newdf["label"] == 2],
+        z=newdf["Spending Score (1-100)"][newdf["label"] == 2],
+        mode='markers',
+        marker=dict(
+            size=8,
+            color='green',
+            opacity=0.8
+        ),
+        name='Cluster 2',
+        showlegend=False
+    )
+
+    trace3 = go.Scatter3d(
+        x=newdf.Age[newdf["label"] == 3],
+        y=newdf["Annual Income (k$)"][newdf["label"] == 3],
+        z=newdf["Spending Score (1-100)"][newdf["label"] == 3],
+        mode='markers',
+        marker=dict(
+            size=8,
+            color='purple',
+            opacity=0.8
+        ),
+        name='Cluster 3',
+        showlegend=False
+    )
+
+    # Combine all the traces for the plot
+    data = [trace0, trace1, trace2, trace3]
+
+    # Layout of the plot
+    layout = go.Layout(
+        scene=dict(
+            xaxis_title='Age',
+            yaxis_title='Annual Income (k$)',
+            zaxis_title='Spending Score (1-100)',
+        ),
+        height=800,
+    )
+
+    # Create the figure
+    fig = go.Figure(data=data, layout=layout)
+
+    # Display the Plotly figure in Streamlit
+    st.plotly_chart(fig)  # Use st.pyplot instead of plt.show()
 
 # def map_clusters(df):
 #     PCA_components = pcacomponents(df, show=False)
@@ -550,8 +618,6 @@ def cluster_visualization(df):
 #     avg_df = df.groupby('cluster').mean()[['Age', 'Spending Score (1-100)', 'Annual Income (k$)']].reset_index()
 #     return avg_df
 
-
-
 def show_spending_score_vs_annual_income_vs_age(df):
     df = df.drop(['CustomerID'], axis=1)
 
@@ -579,11 +645,22 @@ def show_spending_score_vs_annual_income_vs_age(df):
     st.pyplot(fig)
 
 def cluster_analysis(df):
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
     st.markdown("From the 3d scatter plot we can observe the following things:")
     # First Row
     col1, col2 = st.columns(2, gap='large')
     with col1:
-        st.code("Cluster 0 (blue)", language="python")
+        st.markdown(
+        """
+        <div style="background-color: #d9eaf7; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+             Cluster 0 (<span style="color: blue;">blue</span>)
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
         st.markdown(
             """
             <div style="text-align: justify; margin-bottom: 20px">
@@ -595,7 +672,14 @@ def cluster_analysis(df):
         )
 
     with col2:
-        st.code("Cluster 1 (green)", language="python")
+        st.markdown(
+        """
+        <div style="background-color: #d7f7da; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+             Cluster 1 (<span style="color: green;">green</span>)
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
         st.markdown(
             """
             <div style="text-align: justify;">
@@ -609,7 +693,14 @@ def cluster_analysis(df):
     # Second Row
     col3, col4 = st.columns(2, gap='large')
     with col3:
-        st.code("Cluster 2 (red)", language="python")
+        st.markdown(
+        """
+        <div style="background-color: #f7d9d9; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+             Cluster 2 (<span style="color: red;">red</span>)
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
         st.markdown(
             """
             <div style="text-align: justify;">
@@ -621,7 +712,14 @@ def cluster_analysis(df):
         )
 
     with col4:
-        st.code("Cluster 3 (purple)", language="python")
+        st.markdown(
+        """
+        <div style="background-color: #e8d9f7; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+             Cluster 3 (<span style="color: purple;">purple</span>)
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
         st.markdown(
             """
             <div style="text-align: justify; margin-bottom: 30px">
@@ -640,7 +738,7 @@ def cluster_analysis(df):
 
     
 # Navigation bar in sidebar
-page = st.sidebar.selectbox("Select a section:", ["Introduction", "Data Exploration and Preparation", "Analysis and Insights", "Conclusion"])
+page = st.sidebar.selectbox("Select a section:", ["Introduction", "Data Exploration and Preparation", "Analysis and Insights", "Conclusion and Recommendations"])
 
 #Application
 st.header("Customer Segmentation with K-Means 👥")
@@ -649,21 +747,44 @@ st.markdown("<small>by Halimaw Magbeg</small>", unsafe_allow_html=True)
 
 # Content based on navigation selection
 if page == "Introduction":
-    
+
+    col1, col2 = st.columns([1, 1])  # Adjust column widths as needed
+
+# Add the image to the left column
+    with col1:
+        st.image("images/5.png", width=500)
+    with col2:
     # Why this dataset and why study it?
-    st.write("**In this project, we focus on customer segmentation using machine learning techniques.**")
-    st.write("The primary goal is to understand customer behavior and identify distinct customer groups, which can help businesses make data-driven decisions.")
-    st.write("We chose this dataset because it contains valuable features like age, annual income, and spending score, which are key indicators of consumer behavior. By analyzing these features, we can uncover insights that allow businesses to effectively target different customer segments.")
-    st.write("This dataset provides an opportunity to apply clustering techniques, such as K-Means, to explore hidden patterns and better understand how customers differ in their spending and income behavior.")
-    st.write("**This dataset is taken from [Kaggle](https://www.kaggle.com/datasets/vjchoudhary7/customer-segmentation-tutorial-in-python).**")
-    st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("**In this project, we focus on customer segmentation using machine learning techniques.**")
+        st.write("The primary goal is to understand customer behavior and identify distinct customer groups, which can help businesses make data-driven decisions.")
+        st.write("We chose this dataset because it contains valuable features like age, annual income, and spending score, which are key indicators of consumer behavior. By analyzing these features, we can uncover insights that allow businesses to effectively target different customer segments.")
+        st.write("This dataset provides an opportunity to apply clustering techniques, such as K-Means, to explore hidden patterns and better understand how customers differ in their spending and income behavior.")
+        st.write("**This dataset is taken from [Kaggle](https://www.kaggle.com/datasets/vjchoudhary7/customer-segmentation-tutorial-in-python).**")
+        st.write("")
 
     # Customer Segmentation explained
-    st.markdown("##### Customer Segmentation")
+    st.markdown("### Customer Segmentation 📊")
     st.write("Customer segmentation is the process of dividing customers into distinct categories based on shared attributes. This practice helps organizations create more focused strategies, foster deeper customer relationships, and achieve better business outcomes.")
     st.write("By grouping customers based on common characteristics, businesses can design targeted marketing campaigns that resonate with each segment, improving engagement and customer satisfaction.")
     st.write("")
 
+    # Customer Segmentation explained
+    st.markdown("#### Why is Customer Segmentation important?")
+    st.write(" Businesses need to understand their customers to offer personalized services, design targeted marketing campaigns, and enhance customer satisfaction. By analyzing patterns in customer data, we can unlock insights that lead to better decision-making and improved business outcomes.")
+    st.write("Customer segmentation is an effective tool for businesses to closely align their strategy and tactics with, and better target, their current and future customers. Every customer is different and every customer journey is different, so a single approach often isn't going to work for all.")
+
+    st.markdown(
+    """
+    <div style='text-align: center; margin: 20px 0;'>
+        <div style='display: inline-block; height: 4px; width: 100%; background: linear-gradient(to right, #84ffc9, #aab2ff,#eca0ff);'></div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
     st.write("### The Team ✨")
     st.write("Meet the team members who made the exploration possible.")
     # Function to encode the image
@@ -678,7 +799,7 @@ if page == "Introduction":
     madaya = img_to_base64("images/madaya.jpg")
     cabo = img_to_base64("images/cabo.jpg")
 
-    # Create a 3x2 grid of divs with rounded corners, drop shadows, and hover effects
+    # Create a 3x2 grid of divs with rounded corners, drop shadows, and hover effects       
     grid_html = """
     <style>
         .grid-container {
@@ -920,7 +1041,14 @@ elif page == "Analysis and Insights":
 
         col1, col2, col3, col4 = st.columns(4, gap='medium')
         with col1:
-            st.markdown("##### Cluster 0")
+            st.markdown(
+        """
+        <div style="background-color: #d9eaf7; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+            Cluster 0 (<span style="color: blue;">blue</span>)
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
             st.markdown(
                 """
                 <div style="text-align: justify;">
@@ -931,7 +1059,14 @@ elif page == "Analysis and Insights":
             )
 
         with col2:
-            st.markdown("##### Cluster 1")
+            st.markdown(
+                """
+                <div style="background-color: #d7f7da; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+                    Cluster 1 (<span style="color: green;">green</span>)
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.markdown(
                 """
                 <div style="text-align: justify;">
@@ -942,7 +1077,14 @@ elif page == "Analysis and Insights":
             )
 
         with col3:
-            st.markdown("##### Cluster 2")
+            st.markdown(
+                """
+                <div style="background-color: #f7d9d9; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+                    Cluster 2 (<span style="color: red;">red</span>)
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.markdown(
                 """
                 <div style="text-align: justify;">
@@ -953,7 +1095,14 @@ elif page == "Analysis and Insights":
             )
 
         with col4:
-            st.markdown("##### Cluster 3")
+            st.markdown(
+                """
+                <div style="background-color: #e8d9f7; color: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 10px">
+                    Cluster 3 (<span style="color: purple;">purple</span>)
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.markdown(
                 """
                 <div style="text-align: justify;">
@@ -986,25 +1135,45 @@ elif page == "Analysis and Insights":
 
 
 
-elif page == "Conclusion":
-    st.subheader("Conclusion and Recommendations")
+elif page == "Conclusion and Recommendations":
     
-    st.write("**Conclusion**")
-    st.write("The analysis of customer segmentation using K-Means clustering, along with Principal Component Analysis (PCA) and the Elbow Method, has provided valuable insights into the dataset. By clustering customers based on features like age, annual income, and spending score, we were able to identify distinct segments with different behaviors and characteristics. The silhouette plot helped evaluate the quality of the clustering, suggesting that the model's segmentation is fairly accurate but could potentially be further optimized.")
-    st.write("The PCA revealed that the first two components explained over 70% of the variance in the dataset, indicating that a reduced dimensionality approach is effective in capturing key patterns. The Elbow Method suggested that four clusters were the optimal number for this dataset, striking a balance between simplicity and detailed segmentation.")
-    st.write("The data analysis shows that younger customers tend to spend more, while income has a weaker impact on spending. These insights are essential for targeted marketing strategies.")
+    col1, col2 = st.columns([1, 1])  # Adjust column widths as needed
+
+# Add the image to the left column
+    with col1:
+        st.image("images/7.png", width=500)
+    with col2:
+        st.subheader("Conclusion 🎯")
+        st.write("The analysis of customer segmentation using K-Means clustering, along with Principal Component Analysis (PCA) and the Elbow Method, has provided valuable insights into the dataset. By clustering customers based on features like age, annual income, and spending score, we were able to identify distinct segments with different behaviors and characteristics. The silhouette plot helped evaluate the quality of the clustering, suggesting that the model's segmentation is fairly accurate but could potentially be further optimized.")
+        st.write("The PCA revealed that the first two components explained over 70% of the variance in the dataset, indicating that a reduced dimensionality approach is effective in capturing key patterns. The Elbow Method suggested that four clusters were the optimal number for this dataset, striking a balance between simplicity and detailed segmentation.")
+        st.write("The data analysis shows that younger customers tend to spend more, while income has a weaker impact on spending. These insights are essential for targeted marketing strategies.")
+        
+
     st.write("Additionally, the clustering results reveal that customers with high annual income but low spending scores belong to a separate group, indicating that income alone may not fully explain customer spending behavior. These customers may not be engaging with products or services as much as expected, suggesting a potential opportunity to increase customer engagement through personalized offers or loyalty programs.")
     st.write("On the other hand, customers with lower income but higher spending scores represent another distinct group. These individuals are likely to value products or services based on factors other than price, such as brand loyalty or specific product features. Businesses could target this group with premium offerings or exclusive memberships.")
     st.write("The clustering also identified a group of customers with mid-range income and average spending scores, which could be the largest group. This segment may represent a balanced demographic that is open to a wide variety of products and services, making it a key focus for most marketing campaigns.")
     st.write("In summary, while income plays a role in spending behavior, other factors like age, preferences, and product engagement seem to have a more direct influence. These findings highlight the importance of using a multi-dimensional approach to customer segmentation for more effective targeting and campaign optimization.")
-
     
-    st.write("**Recommendations**")
-    st.write("1. **Target Younger Demographics**: Given the negative correlation between age and spending score, marketing efforts could focus more on younger customers, who are more likely to spend.")
-    st.write("2. **Customized Marketing Campaigns**: Tailor campaigns to each cluster’s unique characteristics. For example, clusters with higher income may respond better to premium products, while younger clusters may be more interested in discounts or value-based products.")
-    st.write("3. **Data-Driven Decision Making**: Continuously collect and analyze customer data to refine these segments. This can ensure that businesses stay aligned with evolving customer preferences and behaviors.")
-    st.write("4. **Explore Other Features**: Further analysis can be conducted by incorporating additional features such as customer location or purchasing history, which may provide deeper insights into segmentation and consumer behavior.")
-    st.write("5. **Model Improvement**: Fine-tuning the clustering model or exploring alternative clustering techniques (e.g., DBSCAN or hierarchical clustering) might yield even more accurate customer segments.")
+
+    col1, col2 = st.columns([1, 1])  # Adjust column widths as needed
+
+# Add the image to the left column
+    with col1:
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.write("")
+        st.subheader("Recommendations 💡")
+        st.write("1. **Target Younger Demographics**: Given the negative correlation between age and spending score, marketing efforts could focus more on younger customers, who are more likely to spend.")
+        st.write("2. **Customized Marketing Campaigns**: Tailor campaigns to each cluster’s unique characteristics. For example, clusters with higher income may respond better to premium products, while younger clusters may be more interested in discounts or value-based products.")
+        st.write("3. **Data-Driven Decision Making**: Continuously collect and analyze customer data to refine these segments. This can ensure that businesses stay aligned with evolving customer preferences and behaviors.")
+        st.write("4. **Explore Other Features**: Further analysis can be conducted by incorporating additional features such as customer location or purchasing history, which may provide deeper insights into segmentation and consumer behavior.")
+        st.write("5. **Model Improvement**: Fine-tuning the clustering model or exploring alternative clustering techniques (e.g., DBSCAN or hierarchical clustering) might yield even more accurate customer segments.")
+    with col2:    
+        st.image("images/6.png", width=700)
 
     # Overall summary and future recommendations
     st.write("Overall, the results of this analysis underscore the need for businesses to move beyond traditional demographic variables like income when segmenting their customers. By incorporating factors such as age, engagement, and specific spending patterns, companies can gain deeper insights into their customer base and design more effective marketing strategies.")
