@@ -583,6 +583,7 @@ def cluster_visualization(df):
     # Display the Plotly figure in Streamlit
     st.plotly_chart(fig)  # Use st.pyplot instead of plt.show()
 
+    
 # def map_clusters(df):
 #     PCA_components = pcacomponents(df, show=False)
 #     model = KMeans(n_clusters=4, init='k-means++', random_state=42)
@@ -731,10 +732,87 @@ def cluster_analysis(df):
         )
 
 
+def plot_cluster_analysis(df):
+    # Perform PCA for dimensionality reduction
+    pca = PCA(n_components=2)
+    PCA_components = pd.DataFrame(
+        pca.fit_transform(df[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']]), 
+        columns=['PCA1', 'PCA2']
+    )
 
+    # Perform clustering
+    kmeans = KMeans(n_clusters=4, random_state=42)
+    df['cluster'] = kmeans.fit_predict(PCA_components)
 
+    # Convert 'cluster' column to string type for proper color handling
+    df['cluster'] = df['cluster'].astype(str)
 
+    # Calculate averages by cluster
+    avg_df = df.groupby('cluster', as_index=False).mean()
 
+    # Swap values between Cluster 0 and Cluster 3
+    cluster_0 = avg_df[avg_df['cluster'] == '0']
+    cluster_3 = avg_df[avg_df['cluster'] == '3']
+
+    # Swap rows for Cluster 0 and Cluster 3
+    avg_df.loc[avg_df['cluster'] == '0', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_3[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
+    avg_df.loc[avg_df['cluster'] == '3', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_0[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
+
+    # Define the custom color mapping
+    color_map = {
+        '0': 'blue',     
+        '1': 'green',   
+        '2': 'red',      
+        '3': 'purple'   
+    }
+
+    col1, col2, col3 = st.columns(3)
+
+    # Average Age by Cluster
+    with col1:
+        fig_age = px.bar(
+            avg_df,
+            x="cluster",
+            y="Age",
+            title="Average Age by Cluster",
+            labels={"cluster": "Cluster", "Age": "Average Age"},
+            color="cluster",
+            color_discrete_map=color_map, 
+        )
+        st.plotly_chart(fig_age, use_container_width=True)
+
+    # Spending Score by Cluster
+    with col2:
+        fig_spending = px.bar(
+            avg_df,
+            x="cluster",
+            y="Spending Score (1-100)",
+            title="Spending Score by Cluster",
+            labels={"cluster": "Cluster", "Spending Score (1-100)": "Spending Score"},
+            color="cluster",
+            color_discrete_map=color_map,  
+        )
+        st.plotly_chart(fig_spending, use_container_width=True)
+
+    # Annual Income by Cluster
+    with col3:
+        fig_income = px.bar(
+            avg_df,
+            x="cluster",
+            y="Annual Income (k$)",
+            title="Annual Income by Cluster",
+            labels={"cluster": "Cluster", "Annual Income (k$)": "Annual Income (k$)"},
+            color="cluster",
+            color_discrete_map=color_map, 
+            
+        )
+        st.plotly_chart(fig_income, use_container_width=True)
+
+        print(df.groupby('cluster').mean())
+        # Manually adjust cluster labels based on the correct annual income range.
+        cluster_map = {0: 3, 3: 0}  # Swap cluster 0 and cluster 3
+        df['cluster'] = df['cluster'].map(cluster_map).fillna(df['cluster']).astype(int)
+        print(df[['cluster', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].head())
 
     
 # Navigation bar in sidebar
@@ -1131,9 +1209,7 @@ elif page == "Analysis and Insights":
             unsafe_allow_html=True,
         )
 
-        
-
-
+    plot_cluster_analysis(df)
 
 elif page == "Conclusion and Recommendations":
     
