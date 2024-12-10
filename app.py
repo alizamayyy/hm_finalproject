@@ -735,7 +735,6 @@ def cluster_analysis(df):
 def plot_cluster_analysis(df):
     df = pd.read_csv('Mall_Customers.csv')
     df = df.drop(['CustomerID'], axis=1)
-    
     # Perform PCA for dimensionality reduction
     pca = PCA(n_components=2)
     PCA_components = pd.DataFrame(
@@ -744,9 +743,8 @@ def plot_cluster_analysis(df):
     )
 
     # Perform clustering
-    from sklearn.cluster import KMeans
     kmeans = KMeans(n_clusters=4, random_state=42)
-    df['cluster'] = kmeans.fit_predict(df[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']])
+    df['cluster'] = kmeans.fit_predict(PCA_components)
 
     # Convert 'cluster' column to string type for proper color handling
     df['cluster'] = df['cluster'].astype(str)
@@ -754,15 +752,13 @@ def plot_cluster_analysis(df):
     # Calculate averages by cluster
     avg_df = df.groupby('cluster', as_index=False).mean()
 
-    # Swap values between Cluster 0 and Cluster 3 in avg_df
+    # Swap values between Cluster 0 and Cluster 3
     cluster_0 = avg_df[avg_df['cluster'] == '0']
     cluster_3 = avg_df[avg_df['cluster'] == '3']
 
+    # Swap rows for Cluster 0 and Cluster 3
     avg_df.loc[avg_df['cluster'] == '0', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_3[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
     avg_df.loc[avg_df['cluster'] == '3', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_0[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
-
-    # Now, update the cluster labels in avg_df after swapping
-    avg_df['cluster'] = avg_df['cluster'].map({'0': '3', '3': '0', '1': '1', '2': '2'})
 
     # Define the custom color mapping
     color_map = {
@@ -810,14 +806,15 @@ def plot_cluster_analysis(df):
             labels={"cluster": "Cluster", "Annual Income (k$)": "Annual Income (k$)"},
             color="cluster",
             color_discrete_map=color_map, 
+            
         )
         st.plotly_chart(fig_income, use_container_width=True)
 
-    # Update the cluster labels in the original df after the swap
-    df['cluster'] = df['cluster'].map({'0': 3, '3': 0}).fillna(df['cluster']).astype(int)
-
-    # Print to verify
-    print(df[['cluster', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].head())
+        print(df.groupby('cluster').mean())
+        # Manually adjust cluster labels based on the correct annual income range.
+        cluster_map = {0: 3, 3: 0}  # Swap cluster 0 and cluster 3
+        df['cluster'] = df['cluster'].map(cluster_map).fillna(df['cluster']).astype(int)
+        print(df[['cluster', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].head())
 
     
 # Navigation bar in sidebar
