@@ -748,25 +748,25 @@ def plot_cluster_analysis(df):
     )
 
     # Perform clustering
-    from sklearn.cluster import KMeans
     kmeans = KMeans(n_clusters=4, random_state=42)
-    df['cluster'] = kmeans.fit_predict(df[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']])
+    df['cluster'] = kmeans.fit_predict(PCA_components)
 
-    # Convert 'cluster' column to string type for proper color handling
-    df['cluster'] = df['cluster'].astype(str)
+    # Convert 'cluster' column to integer for groupby operation
+    df['cluster'] = df['cluster'].astype(int)
 
-    # Calculate averages by cluster, using only numeric columns
-    avg_df = df.groupby('cluster')[numeric_columns].mean().reset_index()
+    # Calculate averages by cluster and handle missing data if needed
+    avg_df = df[['cluster', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].groupby('cluster', as_index=False).mean()
 
-    # Swap values between Cluster 0 and Cluster 3 in avg_df
-    cluster_0 = avg_df[avg_df['cluster'] == '0']
-    cluster_3 = avg_df[avg_df['cluster'] == '3']
+    # Swap values between Cluster 0 and Cluster 3
+    cluster_0 = avg_df[avg_df['cluster'] == 0]
+    cluster_3 = avg_df[avg_df['cluster'] == 3]
 
-    avg_df.loc[avg_df['cluster'] == '0', numeric_columns] = cluster_3[numeric_columns].values
-    avg_df.loc[avg_df['cluster'] == '3', numeric_columns] = cluster_0[numeric_columns].values
+    # Swap rows for Cluster 0 and Cluster 3
+    avg_df.loc[avg_df['cluster'] == 0, ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_3[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
+    avg_df.loc[avg_df['cluster'] == 3, ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_0[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
 
-    # Now, update the cluster labels in avg_df after swapping
-    avg_df['cluster'] = avg_df['cluster'].map({'0': '3', '3': '0', '1': '1', '2': '2'})
+    # Convert 'cluster' column in avg_df to string for proper color mapping
+    avg_df['cluster'] = avg_df['cluster'].astype(str)
 
     # Define the custom color mapping
     color_map = {
@@ -822,6 +822,7 @@ def plot_cluster_analysis(df):
 
     # Print to verify
     print(df[['cluster', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].head())
+
 
 # Navigation bar in sidebar
 page = st.sidebar.selectbox("Select a section:", ["Introduction", "Data Exploration and Preparation", "Analysis and Insights", "Conclusion and Recommendations"])
