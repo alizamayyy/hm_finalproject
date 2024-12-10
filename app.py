@@ -733,6 +733,13 @@ def cluster_analysis(df):
 
 
 def plot_cluster_analysis(df):
+    df = pd.read_csv('Mall_Customers.csv')
+    df = df.drop(['CustomerID'], axis=1)
+
+    # Ensure no NaN values in numeric columns before performing PCA and clustering
+    numeric_columns = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+    df[numeric_columns] = df[numeric_columns].fillna(df[numeric_columns].mean())
+
     # Perform PCA for dimensionality reduction
     pca = PCA(n_components=2)
     PCA_components = pd.DataFrame(
@@ -741,16 +748,25 @@ def plot_cluster_analysis(df):
     )
 
     # Perform clustering
+    from sklearn.cluster import KMeans
     kmeans = KMeans(n_clusters=4, random_state=42)
-    df['cluster'] = kmeans.fit_predict(PCA_components)
+    df['cluster'] = kmeans.fit_predict(df[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']])
 
     # Convert 'cluster' column to string type for proper color handling
     df['cluster'] = df['cluster'].astype(str)
 
-    # Calculate averages by cluster
-    avg_df = df.groupby('cluster', as_index=False).mean()
+    # Calculate averages by cluster, using only numeric columns
+    avg_df = df.groupby('cluster')[numeric_columns].mean().reset_index()
 
-    
+    # Swap values between Cluster 0 and Cluster 3 in avg_df
+    cluster_0 = avg_df[avg_df['cluster'] == '0']
+    cluster_3 = avg_df[avg_df['cluster'] == '3']
+
+    avg_df.loc[avg_df['cluster'] == '0', numeric_columns] = cluster_3[numeric_columns].values
+    avg_df.loc[avg_df['cluster'] == '3', numeric_columns] = cluster_0[numeric_columns].values
+
+    # Now, update the cluster labels in avg_df after swapping
+    avg_df['cluster'] = avg_df['cluster'].map({'0': '3', '3': '0', '1': '1', '2': '2'})
 
     # Define the custom color mapping
     color_map = {
@@ -798,17 +814,15 @@ def plot_cluster_analysis(df):
             labels={"cluster": "Cluster", "Annual Income (k$)": "Annual Income (k$)"},
             color="cluster",
             color_discrete_map=color_map, 
-            
         )
         st.plotly_chart(fig_income, use_container_width=True)
 
-        print(df.groupby('cluster').mean())
-        # Manually adjust cluster labels based on the correct annual income range.
-        cluster_map = {0: 3, 3: 0}  # Swap cluster 0 and cluster 3
-        df['cluster'] = df['cluster'].map(cluster_map).fillna(df['cluster']).astype(int)
-        print(df[['cluster', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].head())
+    # Update the cluster labels in the original df after the swap
+    df['cluster'] = df['cluster'].map({'0': 3, '3': 0}).fillna(df['cluster']).astype(int)
 
-    
+    # Print to verify
+    print(df[['cluster', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].head())
+
 # Navigation bar in sidebar
 page = st.sidebar.selectbox("Select a section:", ["Introduction", "Data Exploration and Preparation", "Analysis and Insights", "Conclusion and Recommendations"])
 
@@ -1202,9 +1216,7 @@ elif page == "Analysis and Insights":
             """,
             unsafe_allow_html=True,
         )
-    df = pd.read_csv('Mall_Customers.csv')
-    df = df.drop(['CustomerID'], axis=1)
-    plot_cluster_analysis(df)
+        plot_cluster_analysis(df)
 
 elif page == "Conclusion and Recommendations":
     
