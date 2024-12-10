@@ -733,6 +733,8 @@ def cluster_analysis(df):
 
 
 def plot_cluster_analysis(df):
+    df = pd.read_csv('Mall_Customers.csv')
+    df = df.drop(['CustomerID'], axis=1)
     # Perform PCA for dimensionality reduction
     pca = PCA(n_components=2)
     PCA_components = pd.DataFrame(
@@ -1208,8 +1210,7 @@ elif page == "Analysis and Insights":
             """,
             unsafe_allow_html=True,
         )
-        df = pd.read_csv('Mall_Customers.csv')
-        df = df.drop(['CustomerID'], axis=1)
+
         plot_cluster_analysis(df)
 
 elif page == "Conclusion and Recommendations":
