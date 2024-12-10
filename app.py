@@ -753,12 +753,12 @@ def plot_cluster_analysis(df):
     avg_df = df.groupby('cluster', as_index=False).mean()
 
     # Swap values between Cluster 0 and Cluster 3
-    cluster_0 = avg_df[avg_df['cluster'] == '0']
-    cluster_3 = avg_df[avg_df['cluster'] == '3']
+    #cluster_0 = avg_df[avg_df['cluster'] == '0']
+    #cluster_3 = avg_df[avg_df['cluster'] == '3']
 
     # Swap rows for Cluster 0 and Cluster 3
-    avg_df.loc[avg_df['cluster'] == '0', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_3[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
-    avg_df.loc[avg_df['cluster'] == '3', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_0[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
+    #avg_df.loc[avg_df['cluster'] == '0', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_3[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
+    #avg_df.loc[avg_df['cluster'] == '3', ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = cluster_0[['Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
 
     # Define the custom color mapping
     color_map = {
