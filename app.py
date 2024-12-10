@@ -1208,8 +1208,9 @@ elif page == "Analysis and Insights":
             """,
             unsafe_allow_html=True,
         )
-
-    plot_cluster_analysis(df)
+        df = pd.read_csv('Mall_Customers.csv')
+        df = df.drop(['CustomerID'], axis=1)
+        plot_cluster_analysis(df)
 
 elif page == "Conclusion and Recommendations":
     
